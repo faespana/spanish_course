@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glosario Interactivo de Minería</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Subtle Blue Accent -->
+    <!-- Application Structure Plan: The application is designed as an interactive flashcard system. The main screen features a header, filter controls (category buttons and a search bar), and a grid of vocabulary cards. This structure was chosen to transform a static list into an active learning tool. Users can easily navigate, filter, and search for terms, making the content more accessible and engaging than a simple table. The user flow is simple: select a category or search, then interact with the cards by clicking to reveal the translation. -->
+    <!-- Visualization & Content Choices: Report Info: Mining vocabulary (Spanish, Chinese, Pinyin). Goal: Inform, Organize, and provide an interactive study tool. Viz/Presentation Method: A responsive grid of flippable cards. Interaction: Click-to-flip cards, category filtering via buttons, and real-time search. Justification: This approach is highly interactive and user-friendly, promoting active learning. It's more effective for memorization than a static list. Library/Method: HTML, Tailwind CSS, and Vanilla JavaScript for all interactions. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f7f4;
+            color: #4a4a4a;
+        }
+        .card-container {
+            perspective: 1000px;
+        }
+        .card {
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 0.75rem;
+        }
+        .card-front {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+        .card-back {
+            background-color: #e3f2fd;
+            color: #1e3a8a;
+            transform: rotateY(180deg);
+        }
+        .filter-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .filter-btn.active {
+            background-color: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Glosario Interactivo de Minería</h1>
+            <p class="mt-2 text-lg text-gray-600">Vocabulario para construcción y operación diaria</p>
+        </header>
+
+        <div class="mb-8 md:mb-10">
+            <div id="filters" class="flex flex-wrap justify-center gap-2 md:gap-3 mb-4"></div>
+            <div class="max-w-xl mx-auto">
+                <input type="text" id="search" placeholder="Buscar un término en español..." class="w-full px-4 py-3 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+            </div>
+        </div>
+
+        <main id="vocabulary-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+        </main>
+        
+        <div id="no-results" class="text-center py-10 text-gray-500 text-xl hidden">
+            <p>No se encontraron resultados.</p>
+        </div>
+    </div>
+
+    <script>
+        const vocabularyData = [
+            { category: 'General', es: 'Empresa Minera', ch: '矿业公司', pi: 'Kuàngyè Gōngsī' },
+            { category: 'General', es: 'Mina', ch: '矿山', pi: 'Kuàngshān' },
+            { category: 'General', es: 'Mina a Cielo Abierto', ch: '露天矿', pi: 'Lùtiān Kuàng' },
+            { category: 'General', es: 'Construcción', ch: '施工', pi: 'Shīgōng' },
+            { category: 'General', es: 'Proyecto', ch: '项目', pi: 'Xiàngmù' },
+            { category: 'General', es: 'Equipo', ch: '团队', pi: 'Tuánduì' },
+            { category: 'General', es: 'Seguridad', ch: '安全', pi: 'Ānquán' },
+            { category: 'General', es: 'Salud', ch: '健康', pi: 'Jiànkāng' },
+            { category: 'General', es: 'Medio Ambiente', ch: '环境', pi: 'Huánjìng' },
+            { category: 'General', es: 'Permiso', ch: '许可证', pi: 'Xǔkězhèng' },
+            { category: 'General', es: 'Reunión', ch: '会议', pi: 'Huìyì' },
+            { category: 'General', es: 'Informe', ch: '报告', pi: 'Bàogào' },
+            { category: 'General', es: 'Horario', ch: '时间表', pi: 'Shíjiānbiǎo' },
+            { category: 'General', es: 'Supervisor', ch: '主管', pi: 'Zhǔguǎn' },
+            { category: 'General', es: 'Ingeniero', ch: '工程师', pi: 'Gōngchéngshī' },
+            { category: 'General', es: 'Operador', ch: '操作员', pi: 'Cāozuòyuán' },
+            { category: 'General', es: 'Planificación', ch: '规划', pi: 'Guīhuà' },
+            { category: 'General', es: 'Logística', ch: '物流', pi: 'Wùliú' },
+            { category: 'Maquinaria', es: 'Cargador Frontal', ch: '轮式装载机', pi: 'Lúnshì Zhuāngzàijī' },
+            { category: 'Maquinaria', es: 'Excavadora', ch: '挖掘机', pi: 'Wājuéjī' },
+            { category: 'Maquinaria', es: 'Camión Minero', ch: '矿用卡车', pi: 'Kuàngyòng Kǎchē' },
+            { category: 'Maquinaria', es: 'Perforadora', ch: '钻机', pi: 'Zuānjī' },
+            { category: 'Maquinaria', es: 'Chancadora / Trituradora', ch: '破碎机', pi: 'Pòsuìjī' },
+            { category: 'Maquinaria', es: 'Correa Transportadora', ch: '传送带', pi: 'Chuánsòngdài' },
+            { category: 'Maquinaria', es: 'Torre de Perforación', ch: '钻塔', pi: 'Zuàntǎ' },
+            { category: 'Maquinaria', es: 'Compresor', ch: '压缩机', pi: 'Yāsuōjī' },
+            { category: 'Maquinaria', es: 'Generador', ch: '发电机', pi: 'Fādiànjī' },
+            { category: 'Procesos', es: 'Explotación', ch: '开采', pi: 'Kāicǎi' },
+            { category: 'Procesos', es: 'Perforación', ch: '钻孔', pi: 'Zuānkǒng' },
+            { category: 'Procesos', es: 'Tronadura / Voladura', ch: '爆破', pi: 'Bàopò' },
+            { category: 'Procesos', es: 'Roca', ch: '岩石', pi: 'Yánshí' },
+            { category: 'Procesos', es: 'Mineral', ch: '矿石', pi: 'Kuàngshí' },
+            { category: 'Procesos', es: 'Estéril / Desmonte', ch: '废石', pi: 'Fèishí' },
+            { category: 'Procesos', es: 'Frente de Trabajo', ch: '工作面', pi: 'Gōngzuòmiàn' },
+            { category: 'Procesos', es: 'Talud', ch: '边坡', pi: 'Biānpō' },
+            { category: 'Procesos', es: 'Banco', ch: '台阶', pi: 'Táijiē' },
+            { category: 'Procesos', es: 'Rampa', ch: '斜坡道', pi: 'Xiépōdào' },
+            { category: 'Procesos', es: 'Planta de Procesamiento', ch: '选矿厂', pi: 'Xuǎnkuàngchǎng' },
+            { category: 'Procesos', es: 'Depósito de Relaves', ch: '尾矿库', pi: 'Wěikuàngkù' },
+            { category: 'Procesos', es: 'Caminos de Acarreo', ch: '运输道路', pi: 'Yùnshū Dàolù' },
+            { category: 'Procesos', es: 'Área de Acopio', ch: '堆场', pi: 'Duīchǎng' },
+            { category: 'Seguridad', es: 'Mantenimiento', ch: '维护', pi: 'Wéihù' },
+            { category: 'Seguridad', es: 'Reparación', ch: '修理', pi: 'Xiūlǐ' },
+            { category: 'Seguridad', es: 'Inspección', ch: '检查', pi: 'Jiǎnchá' },
+            { category: 'Seguridad', es: 'Emergencia', ch: '紧急情况', pi: 'Jǐnjí Qíngkuàng' },
+            { category: 'Seguridad', es: 'Primeros Auxilios', ch: '急救', pi: 'Jíjiù' },
+            { category: 'Seguridad', es: 'Procedimiento', ch: '程序', pi: 'Chéngxù' },
+            { category: 'Seguridad', es: 'Casco', ch: '安全帽', pi: 'Ānquánmào' },
+            { category: 'Seguridad', es: 'Lentes de Seguridad', ch: '安全眼镜', pi: 'Ānquán Yǎnjìng' },
+            { category: 'Seguridad', es: 'Guantes', ch: '手套', pi: 'Shǒutào' },
+            { category: 'Seguridad', es: 'Botas de Seguridad', ch: '安全靴', pi: 'Ānquán Xuē' },
+            { category: 'Seguridad', es: 'Chaleco Reflectante', ch: '反光背心', pi: 'Fǎnguāng Bèixīn' },
+            { category: 'Seguridad', es: 'Respirador', ch: '呼吸器', pi: 'Hūxīqì' },
+            { category: 'Seguridad', es: 'Arnés de Seguridad', ch: '安全带', pi: 'Ānquándài' },
+            { category: 'Frases', es: '¡Atención!', ch: '注意!', pi: 'Zhùyì!' },
+            { category: 'Frases', es: '¡Peligro!', ch: '危险!', pi: 'Wēixiǎn!' },
+            { category: 'Frases', es: '¡Alto! / ¡Pare!', ch: '停!', pi: 'Tíng!' },
+            { category: 'Frases', es: '¿Entendido?', ch: '明白了吗?', pi: 'Míngbái le ma?' },
+            { category: 'Frases', es: 'Necesito ayuda.', ch: '我需要帮助.', pi: 'Wǒ xūyào bāngzhù.' },
+            { category: 'Frases', es: '¿Dónde está...?', ch: '...在哪里?', pi: '...zài nǎlǐ?' },
+            { category: 'Frases', es: '¿Cuánto tiempo tomará?', ch: '需要多长时间?', pi: 'Xūyào duō cháng shíjiān?' },
+            { category: 'Frases', es: 'Por favor, repita.', ch: '请重复一遍.', pi: 'Qǐng chóngfù yībiàn.' },
+            { category: 'Frases', es: '¡Vamos!', ch: '走吧!', pi: 'Zǒu ba!' }
+        ];
+
+        const grid = document.getElementById('vocabulary-grid');
+        const filtersContainer = document.getElementById('filters');
+        const searchInput = document.getElementById('search');
+        const noResults = document.getElementById('no-results');
+        
+        let activeFilter = 'Todos';
+
+        const categories = ['Todos', ...new Set(vocabularyData.map(item => item.category))];
+
+        function setupFilters() {
+            categories.forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-100';
+                btn.textContent = category;
+                if (category === 'Todos') {
+                    btn.classList.add('active');
+                }
+                btn.addEventListener('click', () => {
+                    activeFilter = category;
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    searchInput.value = '';
+                    renderGrid();
+                });
+                filtersContainer.appendChild(btn);
+            });
+        }
+
+        function renderGrid() {
+            grid.innerHTML = '';
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            const filteredData = vocabularyData.filter(item => {
+                const inCategory = activeFilter === 'Todos' || item.category === activeFilter;
+                const inSearch = item.es.toLowerCase().includes(searchTerm);
+                return inCategory && inSearch;
+            });
+
+            if (filteredData.length === 0) {
+                noResults.classList.remove('hidden');
+                grid.classList.add('hidden');
+            } else {
+                noResults.classList.add('hidden');
+                grid.classList.remove('hidden');
+            }
+
+            filteredData.forEach(item => {
+                const cardHtml = `
+                    <div class="card-container h-32 md:h-36">
+                        <div class="card w-full h-full">
+                            <div class="card-face card-front p-2 text-center">
+                                <span class="text-base font-semibold text-gray-800">${item.es}</span>
+                            </div>
+                            <div class="card-face card-back p-2 flex flex-col justify-center items-center text-center">
+                                <span class="text-xl font-bold">${item.ch}</span>
+                                <span class="text-sm text-blue-800 opacity-90 mt-1">${item.pi}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += cardHtml;
+            });
+
+            document.querySelectorAll('.card').forEach(card => {
+                card.addEventListener('click', () => {
+                    card.classList.toggle('is-flipped');
+                });
+            });
+        }
+        
+        searchInput.addEventListener('input', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            const allButton = Array.from(document.querySelectorAll('.filter-btn')).find(b => b.textContent === 'Todos');
+            if (allButton) {
+                allButton.classList.add('active');
+            }
+            activeFilter = 'Todos';
+            renderGrid();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupFilters();
+            renderGrid();
+        });
+    </script>
+</body>
+</html>
