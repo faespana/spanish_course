@@ -6,10 +6,6 @@
     <title>Glosario Interactivo de Minería</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Warm Neutrals with Subtle Blue Accent -->
-    <!-- Application Structure Plan: The application is designed as an interactive flashcard system. The main screen features a header, filter controls (category buttons and a search bar), and a grid of vocabulary cards. This structure was chosen to transform a static list into an active learning tool. Users can easily navigate, filter, and search for terms, making the content more accessible and engaging than a simple table. The user flow is simple: select a category or search, then interact with the cards by clicking to reveal the translation. -->
-    <!-- Visualization & Content Choices: Report Info: Mining vocabulary (Spanish, Chinese, Pinyin). Goal: Inform, Organize, and provide an interactive study tool. Viz/Presentation Method: A responsive grid of flippable cards. Interaction: Click-to-flip cards, category filtering via buttons, and real-time search. Justification: This approach is highly interactive and user-friendly, promoting active learning. It's more effective for memorization than a static list. Library/Method: HTML, Tailwind CSS, and Vanilla JavaScript for all interactions. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -234,7 +230,6 @@ function renderGrid() {
     });
 }
 
-// Nueva función para pronunciar en español
 function speak(text) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'es-ES';
